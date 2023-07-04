@@ -3,6 +3,8 @@
 import sys
 import os
 
+DEEP = False
+
 def get_next(parts, parts_iter):
     arg = parts[parts_iter[0]]
     parts_iter[0] += 1
@@ -21,10 +23,11 @@ def err(msg):
     print(f"(ERR) {msg}")
 
 def __search_matching_item(name, search_type):
+    print("Searching filesystem (this may take a while)")
     matching_items = __walk_dirs(name, search_type)
 
     if len(matching_items) > 1:
-        prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved"
+        prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved (enter a number)"
         idx = int(prompt(prompt_message))
         if idx >= 0 and idx < len(matching_items):
             return matching_items[idx]
@@ -39,11 +42,18 @@ def __search_matching_item(name, search_type):
     else:
         return matching_items[0]
 
-def __walk_dirs(name, searchfor, path='/'):
+def __walk_dirs(name, searchfor):
+    global DEEP
+
+    home_directory = os.path.expanduser("~")
+    if DEEP:
+        print("NOTE: Deepsearch is enabled. Searching times will be much longer.")
+        home_directory = '/'
+
     print(f"Searching for {searchfor}: {name}")
     matching = []
     i = 0
-    for root, dirs, files in os.walk(path):
+    for root, dirs, files in os.walk(home_directory):
         if searchfor == 'directories':
             for directory in dirs:
                 if directory == name:
@@ -129,18 +139,37 @@ def move_file(parts, parts_iter):
         err(f"Failed to move file '{filename}': {str(e)}")
 
 def usage():
+    print("Run with `deep` to enable deep search (search times is greatly affected)\n")
     print(". = Current directory")
+    print("../ = Back a single directory")
     print("~ = Home directory\n")
     print("Create a directory")
     print("  create <name> <absolute or relative path>")
     print("Move a file/directory")
     print("  move <filename> <absolute or relative path>")
 
+def set_deep():
+    global DEEP
+    print("Deepsearch enabled")
+    DEEP = True
+
 functions = {
     "quit": quit,
     "create": create_dir,
     "move": move_file,
 }
+
+arg_functions = {
+    "deep": set_deep,
+}
+
+argv = sys.argv[1:]
+
+for arg in argv:
+    try:
+        arg_functions[arg]()
+    except:
+        err(f"Invalid arg: {arg}")
 
 print("Type `help` for more information")
 while True:

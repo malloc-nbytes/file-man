@@ -79,7 +79,7 @@ NOTE: More than 50 candidates present
 +-----------------------------------------+
 ```
 
-Just as it's stated, `[ENTER]` will show the next item, `a + [ENTER]` will show the rest, and typing a number and pressing `[ENTER]` will use that item.
+Just as it's stated, `[ENTER]` will show the next item, `a + [ENTER]` will show the rest, and typing a number and pressing `[ENTER]` will use that item. If the rest is shown, you can still look through everything that was printed and choose the number that way as well.
 
 ### Create a directory
 When prompted, type `create <name> <absolute/relative or ambiguous path>`, where `<name>` is the name of the directory you want to create and `<absolute/relative or ambiguous path>` is where you want it located.

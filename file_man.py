@@ -2,6 +2,10 @@
 
 import sys
 import os
+import threading
+import time
+
+import itertools
 
 DEEP = False
 
@@ -22,25 +26,21 @@ def quit(parts=None, parts_iter=None):
 def err(msg):
     print(f"(ERR) {msg}")
 
-def __search_matching_item(name, search_type):
-    print("Searching filesystem (this may take a while)")
-    matching_items = __walk_dirs(name, search_type)
+def spinning_wheel(stop_event):
+    spinner = itertools.cycle(['|', '/', '-', '\\'])
+    while not stop_event.is_set():
+        print(next(spinner), end='\r')
+        time.sleep(0.1)
 
-    if len(matching_items) > 1:
-        prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved (enter a number)"
-        idx = int(prompt(prompt_message))
-        if idx >= 0 and idx < len(matching_items):
-            return matching_items[idx]
-        elif len(matching_items) == 0:
-            err(f"No {search_type} with the name {name} found.")
-            return None
-        else:
-            return matching_items[0]
-    elif len(matching_items) == 0:
-        err(f"No {search_type} with the name {name} found.")
-        return None
-    else:
-        return matching_items[0]
+def top_ten_shortest(data):
+    print("\n| Top 10 candidates:")
+    print(" ∟")
+    sorted_data = sorted(data, key=lambda x: len(x[1]))
+    num_items_to_print = min(10, len(sorted_data))
+    for i in range(num_items_to_print):
+        id_value, string_value = sorted_data[i]
+        print(f"  | ({id_value}) path: {string_value}")
+    print()
 
 def __walk_dirs(name, searchfor):
     global DEEP
@@ -50,6 +50,10 @@ def __walk_dirs(name, searchfor):
         print("NOTE: Deepsearch is enabled. Searching times will be much longer.")
         home_directory = '/'
 
+    stop_event = threading.Event()
+    spinner_thread = threading.Thread(target=spinning_wheel, args=(stop_event,))
+    spinner_thread.start()
+
     print(f"Searching for {searchfor}: {name}")
     matching = []
     i = 0
@@ -58,17 +62,72 @@ def __walk_dirs(name, searchfor):
             for directory in dirs:
                 if directory == name:
                     new_path = os.path.join(root, directory)
-                    print(f"{i}: {new_path}")
-                    matching.append(new_path)
+                    matching.append((i, new_path))
                     i += 1
         elif searchfor == 'files':
             for file in files:
                 if file == name:
                     new_path = os.path.join(root, file)
-                    print(f"{i}: {new_path}")
-                    matching.append(new_path)
+                    matching.append((i, new_path))
                     i += 1
+    stop_event.set()
+    spinner_thread.join()
+    print("\rDONE")
     return matching
+
+def __search_matching_item(name, search_type):
+    print("Searching filesystem (this may take a while)")
+    matching_items = __walk_dirs(name, search_type)
+   
+    if len(matching_items) > 1:
+        os.system("stty -echo")
+        big = len(matching_items) > 50
+        idx = None
+
+        if big:
+            print("NOTE: More than 50 candidates present")
+            print("+-----------------------------------------+")
+            print("|     [ENTER]           = next item       |")
+            print("| a + [ENTER]           = list all        |")
+            print("| any number + [ENTER]  = use this number |")
+            print("+-----------------------------------------+")
+
+        print("| All candidates:")
+        print(" ∟")
+
+        for item in matching_items:
+            if big:
+                advance = input()
+                try:
+                    idx = int(advance)
+                    break
+                except:
+                    if 'a' in advance:
+                        big = False
+            print(f"  | ({item[0]}) {item[1]}")
+
+        os.system("stty echo")
+        top_ten_shortest(matching_items)
+
+        if idx is None:
+            prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved (enter a number)"
+            idx = int(prompt(prompt_message))
+        else:
+            print(f"Using candidate: {matching_items[idx]}")
+
+        if idx >= 0 and idx < len(matching_items):
+            return matching_items[idx][1]
+        elif len(matching_items) == 0:
+            err(f"No {search_type} with the name {name} found.")
+            return None
+        else:
+            return matching_items[0][1]
+
+    elif len(matching_items) == 0:
+        err(f"No {search_type} with the name {name} found.")
+        return None
+    else:
+        return matching_items[0][1]
 
 def __create_dir(path):
     print(f"Creating directory: {path}")
@@ -144,9 +203,12 @@ def usage():
     print("../ = Back a single directory")
     print("~ = Home directory\n")
     print("Create a directory")
-    print("  create <name> <absolute or relative path>")
-    print("Move a file/directory")
-    print("  move <filename> <absolute or relative path>")
+    print("  create <name> <absolute/relative or ambiguous path>")
+    print("Move a file")
+    print("  move <filename> <absolute/relative or ambiguous path>")
+    print("Quit the program")
+    print("  quit")
+    print("  exit")
 
 def set_deep():
     global DEEP
@@ -155,6 +217,7 @@ def set_deep():
 
 functions = {
     "quit": quit,
+    "exit": quit,
     "create": create_dir,
     "move": move_file,
 }

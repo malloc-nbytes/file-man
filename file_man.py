@@ -2,6 +2,8 @@
 
 import sys
 import os
+import stat
+from datetime import datetime
 import threading
 import time
 
@@ -75,10 +77,10 @@ def __walk_dirs(name, searchfor):
     print("\rDONE")
     return matching
 
-def __search_matching_item(name, search_type):
+def __search_matching_item(name, search_type, modification=True):
     print("Searching filesystem (this may take a while)")
     matching_items = __walk_dirs(name, search_type)
-   
+
     if len(matching_items) > 1:
         os.system("stty -echo")
         big = len(matching_items) > 50
@@ -108,6 +110,9 @@ def __search_matching_item(name, search_type):
 
         os.system("stty echo")
         top_ten_shortest(matching_items)
+
+        if not modification:
+            return None
 
         if idx is None:
             prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved (enter a number)"
@@ -197,6 +202,59 @@ def move_file(parts, parts_iter):
     except OSError as e:
         err(f"Failed to move file '{filename}': {str(e)}")
 
+def find_dir(parts, parts_iter):
+    try:
+        dirname = get_next(parts, parts_iter)
+    except:
+        err("Not enough arguments provided")
+        return
+    __search_matching_item(dirname, "directories", False)
+
+def find_file(parts, parts_iter):
+    try:
+        filename = get_next(parts, parts_iter)
+    except:
+        err("Not enough arguments provided")
+        return
+    __search_matching_item(filename, "files", False)
+
+def clear_terminal(parts, parts_iter):
+    # Clear terminal screen command for Windows
+    if os.name == 'nt':
+        os.system('cls')
+    # Clear terminal screen command for Linux/Mac
+    else:
+        os.system('clear')
+
+def list_dir(parts, parts_iter):
+    filepath = get_next(parts, parts_iter)
+    if os.path.isdir(filepath) or '~' in filepath or '.' in filepath:
+        filepath = os.path.abspath(os.path.expanduser(filepath))
+    else:
+        filepath = __search_matching_item(filepath, "directories")
+
+    if filepath is None or filepath is None:
+        err(f"Exiting as filepath is None or filepath is None")
+        return
+
+    items = os.listdir(filepath)
+    max_permissions_width = 10
+    max_size_width = 10
+
+    for item in items:
+        item_path = os.path.join(filepath, item)
+        item_stat = os.stat(item_path)
+        
+        item_size = item_stat.st_size
+        item_permissions = stat.filemode(item_stat.st_mode)
+        item_last_modified = datetime.fromtimestamp(item_stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+
+        output = "{:<{}} {:>{}} {:<19} {}".format(item_permissions, max_permissions_width,
+                                                  item_size, max_size_width,
+                                                  item_last_modified,
+                                                  item)
+        print(output)
+
 def usage():
     print("Run with `deep` to enable deep search (search times is greatly affected)\n")
     print(". = Current directory")
@@ -206,6 +264,14 @@ def usage():
     print("  create <name> <absolute/relative or ambiguous path>")
     print("Move a file")
     print("  move <filename> <absolute/relative or ambiguous path>")
+    print("Find a directory")
+    print("  finddir <name>")
+    print("Find a file")
+    print("  findfile <name>")
+    print("List items in a directory")
+    print("  ls <absolute/relative or ambiguous path>")
+    print("Clear the screen")
+    print("  clear")
     print("Quit the program")
     print("  quit")
     print("  exit")
@@ -218,8 +284,12 @@ def set_deep():
 functions = {
     "quit": quit,
     "exit": quit,
+    "clear": clear_terminal,
+    "ls": list_dir,
     "create": create_dir,
     "move": move_file,
+    "finddir": find_dir,
+    "findfile": find_file,
 }
 
 arg_functions = {
@@ -246,6 +316,8 @@ while True:
     parts = user_input.split(' ')
 
     command = get_next(parts, parts_iter)
+    if command == "":
+        continue
 
     if command in functions:
         functions[command](parts, parts_iter)

@@ -124,7 +124,7 @@ findfile backup.txt
 ```
 
 ### List a directory
-This works the same as the command `ls` does, except you provide it an ambiguous path. It will then list out everything in that directory with permissions, size, date last modified, and the name.
+This works the same as the command `ls` does, except you can provide it an ambiguous path. It will then list out everything in that directory with permissions, size, date last modified, and the name.
 
 Example:
 ```

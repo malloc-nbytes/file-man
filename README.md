@@ -67,8 +67,19 @@ Multiple directories with the same name found and needs to be resolved (enter a 
 
 If there are more than 50 candidates, it will go through a "slow mode", and displays this:
 ```
-todo
+> finddir Documents
+Searching filesystem (this may take a while)
+Searching for directories: Documents
+DONE
+NOTE: More than 50 candidates present
++-----------------------------------------+
+|     [ENTER]           = next item       |
+| a + [ENTER]           = list all        |
+| any number + [ENTER]  = use this number |
++-----------------------------------------+
 ```
+
+Just as it's stated, `[ENTER]` will show the next item, `a + [ENTER]` will show the rest, and typing a number and pressing `[ENTER]` will use that item.
 
 ### Create a directory
 When prompted, type `create <name> <absolute/relative or ambiguous path>`, where `<name>` is the name of the directory you want to create and `<absolute/relative or ambiguous path>` is where you want it located.
@@ -86,10 +97,10 @@ Similar to above, when prompted, type `create <name> <absolute/relative or ambig
 
 Example:
 ```
-> move ../my_dir ~/dev/python/
-> move ~/dev/c/my_dir .
-> move ./my_dir ../
-> move my_dir python
+> move ../file.py ~/dev/python/
+> move ~/dev/c/file.c .
+> move ./file.py ../
+> move file.py python
 ```
 
 ### Find a directory

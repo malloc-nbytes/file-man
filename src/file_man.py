@@ -116,7 +116,14 @@ def __search_matching_item(name, search_type, modification=True):
 
         if idx is None:
             prompt_message = f"Multiple {search_type} with the same name found and needs to be resolved (enter a number)"
-            idx = int(prompt(prompt_message))
+            try:
+                idx = int(prompt(prompt_message))
+            except:
+                if idx == "quit" or idx == "exit":
+                    quit(parts, parts_iter)
+                else:
+                    err(f"Unknown input")
+                    return None
         else:
             print(f"Using candidate: {matching_items[idx]}")
 

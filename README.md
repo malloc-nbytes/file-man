@@ -182,7 +182,7 @@ When prompted, type `clear` to clear the screen.
 When prompted, type `quit` or `exit` to quit the program.
 
 ### Deepsearch
-By default, when walking through the directories, it starts at `~`. However, by running the program with `deep`, it will being its search at `/`. This will slow down the search time dramatically.
+By default, when walking through the directories, it starts at `~`. However, by running the program with `deep`, it will begin its search at `/`. This will slow down the search time dramatically.
 
 Example:
 ```
